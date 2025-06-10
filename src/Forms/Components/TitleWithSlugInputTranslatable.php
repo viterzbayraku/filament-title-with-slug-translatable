@@ -10,14 +10,14 @@ use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class TitleWithSlugInput
+class TitleWithSlugInputTranslatable
 {
     public static function make(
-
         // Model fields
         string|null $fieldTitle = null,
         string|null $fieldSlug = null,
-
+        // Multilingual
+        array $locales = [], // <--- Додаємо параметр для мов
         // Url
         string|Closure|null $urlPath = '/',
         string|Closure|null $urlHost = null,
@@ -25,7 +25,6 @@ class TitleWithSlugInput
         bool|Closure $urlVisitLinkVisible = true,
         null|Closure|string $urlVisitLinkLabel = null,
         null|Closure $urlVisitLinkRoute = null,
-
         // Title
         string|Closure|null $titleLabel = null,
         string|null $titlePlaceholder = null,
@@ -37,7 +36,6 @@ class TitleWithSlugInput
         bool|Closure $titleIsReadonly = false,
         bool|Closure $titleAutofocus = true,
         null|Closure $titleAfterStateUpdated = null,
-
         // Slug
         string|null $slugLabel = null,
         array $slugRules = [
@@ -53,6 +51,129 @@ class TitleWithSlugInput
         $fieldTitle = $fieldTitle ?? config('filament-title-with-slug.field_title');
         $fieldSlug = $fieldSlug ?? config('filament-title-with-slug.field_slug');
         $urlHost = $urlHost ?? config('filament-title-with-slug.url_host');
+
+        // --- MULTILINGUAL SUPPORT ---
+        if (!empty($locales)) {
+            $titleInputs = [];
+            $slugInputs = [];
+            foreach ($locales as $locale) {
+                $titleInputs[] = TextInput::make("{$fieldTitle}.{$locale}")
+                    ->label($titleLabel ? ($titleLabel . " [{$locale}]") : strtoupper($locale))
+                    ->disabled($titleIsReadonly)
+                    ->autofocus($titleAutofocus)
+                    ->reactive()
+                    ->disableAutocomplete()
+                    ->rules($titleRules)
+                    ->extraInputAttributes($titleExtraInputAttributes ?? ['class' => 'text-xl font-semibold'])
+                    ->beforeStateDehydrated(fn (TextInput $component, $state) => $component->state(trim($state)))
+                    ->afterStateUpdated(
+                        function (
+                            $state,
+                            Closure $set,
+                            Closure $get,
+                            string $context,
+                            ?Model $record,
+                            TextInput $component
+                        ) use (
+                            $slugSlugifier,
+                            $fieldSlug,
+                            $locale,
+                            $titleAfterStateUpdated,
+                        ) {
+                            $slugAutoUpdateDisabled = $get('slug_auto_update_disabled');
+                            if ($context === 'edit' && filled($record)) {
+                                $slugAutoUpdateDisabled = true;
+                            }
+                            if (! $slugAutoUpdateDisabled && filled($state)) {
+                                $set("{$fieldSlug}.{$locale}", self::slugify($slugSlugifier, $state));
+                            }
+                            if ($titleAfterStateUpdated) {
+                                $component->evaluate($titleAfterStateUpdated);
+                            }
+                        }
+                    );
+                if (in_array('required', $titleRules, true)) {
+                    $titleInputs[count($titleInputs)-1]->required();
+                }
+                if ($titlePlaceholder !== '') {
+                    $titleInputs[count($titleInputs)-1]->placeholder($titlePlaceholder ?: fn () => Str::of($fieldTitle)->headline());
+                }
+                if (!$titleLabel) {
+                    $titleInputs[count($titleInputs)-1]->disableLabel();
+                }
+                if ($titleRuleUniqueParameters) {
+                    $titleInputs[count($titleInputs)-1]->unique(...$titleRuleUniqueParameters);
+                }
+
+                $slugInputs[] = SlugInput::make("{$fieldSlug}.{$locale}")
+                    ->slugInputVisitLinkRoute($urlVisitLinkRoute)
+                    ->slugInputVisitLinkLabel($urlVisitLinkLabel)
+                    ->slugInputUrlVisitLinkVisible($urlVisitLinkVisible)
+                    ->slugInputContext(fn ($context) => $context === 'create' ? 'create' : 'edit')
+                    ->slugInputRecordSlug(fn (?Model $record) => $record?->getAttributeValue($fieldSlug)[$locale] ?? null)
+                    ->slugInputModelName(
+                        fn (?Model $record) => $record
+                            ? Str::of(class_basename($record))->headline()
+                            : ''
+                    )
+                    ->slugInputLabelPrefix($slugLabel)
+                    ->slugInputBasePath($urlPath)
+                    ->slugInputBaseUrl($urlHost)
+                    ->slugInputShowUrl($urlHostVisible)
+                    ->slugInputSlugLabelPostfix($slugLabelPostfix)
+                    ->readonly($slugIsReadonly)
+                    ->reactive()
+                    ->disableAutocomplete()
+                    ->disableLabel()
+                    ->regex($slugRuleRegex)
+                    ->rules($slugRules)
+                    ->afterStateUpdated(
+                        function (
+                            $state,
+                            Closure $set,
+                            Closure $get,
+                            TextInput $component
+                        ) use (
+                            $slugSlugifier,
+                            $fieldTitle,
+                            $fieldSlug,
+                            $locale,
+                            $slugAfterStateUpdated,
+                        ) {
+                            $text = trim($state) === ''
+                                ? $get("{$fieldTitle}.{$locale}")
+                                : $get("{$fieldSlug}.{$locale}");
+                            $set("{$fieldSlug}.{$locale}", self::slugify($slugSlugifier, $text));
+                            $set('slug_auto_update_disabled', true);
+                            if ($slugAfterStateUpdated) {
+                                $component->evaluate($slugAfterStateUpdated);
+                            }
+                        }
+                    );
+                if (in_array('required', $slugRules, true)) {
+                    $slugInputs[count($slugInputs)-1]->required();
+                }
+                $slugRuleUniqueParameters
+                    ? $slugInputs[count($slugInputs)-1]->unique(...$slugRuleUniqueParameters)
+                    : $slugInputs[count($slugInputs)-1]->unique(ignorable: fn (?Model $record) => $record);
+            }
+            $hiddenInputSlugAutoUpdateDisabled = Hidden::make('slug_auto_update_disabled')->dehydrated(false);
+            return Group::make()
+                ->schema([
+                    \Filament\Forms\Components\Tabs::make('locale_tabs')
+                        ->tabs(
+                            collect($locales)->map(fn($locale, $i) =>
+                                \Filament\Forms\Components\Tabs\Tab::make($locale)
+                                    ->label(strtoupper($locale))
+                                    ->schema([
+                                        $titleInputs[$i],
+                                        $slugInputs[$i],
+                                    ])
+                            )->toArray()
+                        ),
+                    $hiddenInputSlugAutoUpdateDisabled,
+                ]);
+        }
 
         /** Input: "Title" */
         $textInput = TextInput::make($fieldTitle)
