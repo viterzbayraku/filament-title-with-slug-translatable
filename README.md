@@ -12,5 +12,6 @@ View" link, hide the host name, and many more. Read the [full documentation](#in
 TitleWithSlugInput::make(
     fieldTitle: 'title', // The name of the field in your model that stores the title.
     fieldSlug: 'slug', // The name of the field in your model that will store the slug.
+    locales: ['uk', 'en'],
 ),
 ```
