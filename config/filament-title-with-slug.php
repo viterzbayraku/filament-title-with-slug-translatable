@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Model Fields
@@ -13,7 +12,7 @@ return [
     |
     */
 
-    'field_title' => 'title', // Overridable with parameter (fieldTitle: 'title')
+    'field_title' => 'title', // Overridable with parameter (fieldTitle: 'title'), зробити текст у полі значно більшим і жирним
     'field_slug' => 'slug', // Overridable with parameter (fieldSlug: 'title')
 
     /*
@@ -26,5 +25,4 @@ return [
     */
 
     'url_host' => env('APP_URL'), // Overridable with parameter (urlHost: 'https://www.camya.com/')
-
 ];

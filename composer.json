@@ -45,12 +45,12 @@
             "src/helpers.php"
         ],
         "psr-4": {
-            "Camya\\Filament\\": "src"
+            "Viterzbayraku\\Filament\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Camya\\Filament\\Tests\\": "tests"
+            "Viterzbayraku\\Filament\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -72,7 +72,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Camya\\Filament\\FilamentTitleWithSlugServiceProvider"
+                "Viterzbayraku\\Filament\\FilamentTitleWithSlugServiceProvider"
             ]
         }
     },

@@ -1,25 +1,49 @@
 <?php
 
-namespace Camya\Filament;
+namespace Viterzbayraku\Filament;
 
-use Filament\PluginServiceProvider;
-use Spatie\LaravelPackageTools\Package;
+use Filament\Facades\FilamentAsset;
+use Illuminate\Support\ServiceProvider;
+use function config_path;
+use function public_path;
 
-class FilamentTitleWithSlugServiceProvider extends PluginServiceProvider
+class FilamentTitleWithSlugServiceProvider extends ServiceProvider
 {
-    public function configurePackage(Package $package): void
+    public function boot(): void
     {
-        $package
-            ->name('filament-title-with-slug')
-            ->hasConfigFile()
-            ->hasViews()
-            ->hasTranslations();
+        // Публікація конфіга
+        if (function_exists('config_path')) {
+            $this->publishes([
+                __DIR__.'/../config/filament-title-with-slug.php' => config_path('filament-title-with-slug.php'),
+            ], 'config');
+        }
+
+        // Завантаження views
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'filament-title-with-slug');
+
+        // Завантаження перекладів
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'filament-title-with-slug');
+
+        // Публікація стилів (опційно)
+        if (function_exists('public_path')) {
+            $this->publishes([
+                __DIR__.'/../resources/css/filament-title-with-slug.css' => public_path('vendor/filament-title-with-slug/filament-title-with-slug.css'),
+            ], 'public');
+        }
+
+        // Підключення кастомного CSS для Tabs
+        if (class_exists(\Filament\Facades\FilamentAsset::class)) {
+            FilamentAsset::register([
+                __DIR__.'/../resources/css/filament-title-with-slug-tabs.css',
+            ], 'viterzbayraku-filament-title-with-slug');
+        }
     }
 
-    protected function getStyles(): array
+    public function register(): void
     {
-        return [
-            'filament-title-with-slug-styles' => __DIR__.'/../resources/dist/filament-title-with-slug.css',
-        ];
+        $this->mergeConfigFrom(
+            __DIR__.'/../config/filament-title-with-slug.php',
+            'filament-title-with-slug'
+        );
     }
 }

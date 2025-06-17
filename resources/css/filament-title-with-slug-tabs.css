@@ -1,0 +1,23 @@
+/* Custom styles for Filament Tabs in TitleWithSlugInputTranslatable */
+.my-custom-tabs .fi-tabs-header {
+    background: #f8fafc;
+    border-radius: 0.5rem 0.5rem 0 0;
+    padding: 0.25rem 0.5rem;
+}
+.my-custom-tabs .fi-tabs-tab {
+    font-size: 0.85rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem 0.375rem 0 0;
+    margin-right: 0.25rem;
+    transition: background 0.2s;
+    outline: 2px solid #f59e42; /* Додаємо помаранчевий outline для всіх вкладок */
+}
+.my-custom-tabs .fi-tabs-tab[aria-selected="true"] {
+    background: #f59e42 !important; /* Яскравий помаранчевий фон для активної вкладки */
+    color: #fff !important;
+    outline: 3px solid #2563eb; /* Синій outline для активної вкладки */
+}
+.my-custom-tabs .fi-tabs-tab[aria-selected="false"] {
+    background: #e5e7eb;
+    color: #374151;
+}

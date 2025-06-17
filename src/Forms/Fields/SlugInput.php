@@ -1,6 +1,6 @@
 <?php
 
-namespace Camya\Filament\Forms\Fields;
+namespace Viterzbayraku\Filament\Forms\Fields;
 
 use Closure;
 use Filament\Forms\Components\TextInput;
@@ -102,9 +102,9 @@ class SlugInput extends TextInput
         return $this->evaluate($this->labelPrefix);
     }
 
-    public function readonly(bool|Closure $readonly): static
+    public function readOnly(bool|Closure $condition = true): static
     {
-        $this->readonly = $readonly;
+        $this->readonly = $condition;
 
         return $this;
     }

@@ -1,1 +1,8 @@
 @tailwind utilities;
+
+.filament-title-with-slug__group {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
